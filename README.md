@@ -1,130 +1,119 @@
-# Hacking-With-Golang
+# Solana PumpFun/PumpSwap Copy Trading Bot
 
-Golang安全资源合集
+This is a high-performance Rust-based copy trading bot that monitors and replicates trading activity on Solana DEXs like PumpFun and PumpSwap. The bot uses advanced transaction monitoring to detect and copy trades in real-time, giving you an edge in the market.
 
-## 编程相关
+The bot specifically tracks `buy` and `create` transactions on PumpFun, as well as token migrations from PumpFun to Raydium when the `initialize2` instruction is involved and the migration pubkey (`39azUYFWPz3VHgKCf3VChUwbpURdCHRxjWVowf5jUJjg`) is present.
+# Features:
 
-- [The Go Programming Language](https://golang.org/doc/) - Go语言官方文档
-- [go-internals](https://github.com/teh-cmc/go-internals) - 深入理解Go语言
-- [The Little Go Book](https://www.openmymind.net/assets/go/go.pdf) - Google Go语言编程书
-- [book](https://github.com/qyuhen/book) - 雨痕Go 学习笔记
-- [Hacking-with-Go](https://github.com/parsiya/Hacking-with-Go/) - Golang黑客编程
+- **Real-time Transaction Monitoring** - Uses Yellowstone gRPC to monitor transactions with minimal latency and high reliability
+- **Multi-Protocol Support** - Compatible with both PumpFun and PumpSwap DEX platforms for maximum trading opportunities
+- **Automated Copy Trading** - Instantly replicates buy and sell transactions from monitored wallets
+- **Smart Transaction Parsing** - Advanced transaction analysis to accurately identify and process trading activities
+- **Configurable Trading Parameters** - Customizable settings for trade amounts, timing, and risk management
+- **Built-in Selling Strategy** - Intelligent profit-taking mechanisms with customizable exit conditions
+- **Performance Optimization** - Efficient async processing with tokio for high-throughput transaction handling
+- **Reliable Error Recovery** - Automatic reconnection and retry mechanisms for uninterrupted operation
 
-## 库
+# Who is it for?
 
-- [gopacket](https://github.com/google/gopacket) - Go语言用于处理网络数据包的库
-- [xorm](https://github.com/go-xorm/xorm) - Go语言实现的ORM库，支持多种数据库
+- Bot users looking for the fastest transaction feed possible for Pumpfun or Raydium (Sniping, Arbitrage, etc).
+- Validators who want an edge by decoding shreds locally.
 
-## 代码安全
+# Setting up
 
-- [Go-SCP](https://github.com/Checkmarx/Go-SCP) - Go语言安全编码实践指南
-- [gosec](https://github.com/securego/gosec) - Go语言源码安全分析工具
-- [gotools](https://github.com/felberj/gotools) - 用于逆向Golang二进制文件的Ghidra插件
-- [gobfuscate](https://github.com/unixpickle/gobfuscate) - 一款针对Go二进制和包的混淆工具
+## Environment Variables
 
-## 安全工具
+Before run, you will need to add the following environment variables to your `.env` file:
 
-- [certigo](https://github.com/square/certigo) - Go语言编写用于检查/验证证书信息的命令行工具
-- [Blind-SQL-Injector](https://github.com/Releasel0ck/Blind-SQL-Injector) - Go语言编写的手工盲注辅助工具
-- [lonely-shell](https://github.com/danielan/lonely-shell) - Go语言实现的反弹Shell后门
-- [hershell](https://github.com/sysdream/hershell) -  Go语言反弹Shell后门
-- [chashell](https://github.com/sysdream/chashell) -  Go语言编写通过DNS进行通信的反向Shell
-- [go-deliver](https://github.com/0x09AL/go-deliver) - Go语言编写的Payload交互工具
-- [go-shellcode](https://github.com/brimstone/go-shellcode) - Go语言编写的ShellCode执行工具
-- [go-mimikatz](https://github.com/vyrus001/go-mimikatz) - Go语言版本的Mimikatz
-- [NtlmSocks](https://github.com/360-A-Team/NtlmSocks) - 一个工作在网络层的跨平台哈希传递工具
-- [CHAOS](https://github.com/tiagorlampert/CHAOS) - Go语言编写的Windows远控工具
-- [judas](https://github.com/JonCooperWorks/judas) - Go语言编写的反向钓鱼工具
-- [Modlishka](https://github.com/drk1wi/Modlishka) - Go语言编写的反向代理钓鱼工具
-- [Gophish](https://github.com/gophish/gophish) - Go语言编写的开源钓鱼框架
-- [goddi](https://github.com/NetSPI/goddi) - Go语言编写的活动目录信息导出工具
-- [goHackTools](https://github.com/dreddsa5dies/goHackTools) - Go语言编写的黑客工具集
-- [honeybits](https://github.com/0x4D31/honeybits) - 一款Go语言开发的蜜罐
-- [xsec-checker](https://github.com/netxfly/sec_check) - Go语言编写的服务器安全检测辅助工具
-- [janusec](https://github.com/Janusec/janusec) - Golang打造的开源WAF网关
-- [xsec-ip-database](https://github.com/netxfly/xsec-ip-database) - Go语言实现的恶意IP和域名库
-- [xsec-traffic](https://github.com/netxfly/xsec-traffic) - Go语言编写的轻量级恶意流量分析程序
-- [GoCrack](https://github.com/fireeye/gocrack) - Go语言编写密码爆破平台
-- [gowitness](https://github.com/sensepost/gowitness) - Golang开发使用Chrome Headless实现的网页截图工具
-- [Kunpeng](https://github.com/opensec-cn/kunpeng) - 一个Golang编写的开源POC检测框架
-- [AssassinGo](https://github.com/AmyangXYZ/AssassinGo) - 基于Go的高并发可拓展式Web渗透框架
-- [muraena](https://github.com/muraenateam/muraena) - 反向代理自动化钓鱼工具
-- [ruse](https://github.com/e3prom/ruse) - 适用于Red Team基础架构的反向代理
-- [hershell](https://github.com/lesnuages/hershell) - 跨平台反弹Shell生成工具
-- [BadArchitect](https://github.com/mthbernardes/BadArchitect) - 滥用SketchUp在Windows上实现持久化的PoC
-- [golang_c2](https://github.com/prsecurity/golang_c2) - Go语言编写的C2服务器
-- [XRay](https://github.com/evilsocket/xray) - 从公共网络中收集OSINT情报的工具
-- [GTRS](https://github.com/mthbernardes/GTRS) - 通过Google Translator做为代理发送远程控制命令的C2服务器
-- [merlin](https://github.com/Ne0nd0g/merlin) - Golang跨平台C2
-- [Modlishka](https://github.com/drk1wi/Modlishka) - 反向代理钓鱼工具，支持2FA
-- [gookies](https://github.com/CCob/gookies) - Dump Chrome Cookie的工具
-- [goreflect](https://github.com/CCob/goreflect) - Golang Reflective DLL加载
-- [gdrive](https://github.com/gdrive-org/gdrive) - Google Drive CLI客户端
-- [shhgit](https://github.com/eth0izzle/shhgit) - 实时的Github敏感信息监控
-- [pspy](https://github.com/DominicBreuker/pspy) - 在没有root权限的情况下监控linux进程
-- [ruler](https://github.com/sensepost/ruler) - 利用Exchange服务进行渗透的工具
-- [sliver](https://github.com/BishopFox/sliver) - 跨平台C2框架
-- [subjack](https://github.com/haccer/subjack) - Subdomain Takeover扫描识别
-- [raven](https://github.com/0x09AL/raven) - Linkedin信息收集工具
-- [phishery](https://github.com/ryhanson/phishery) - Word文档钓鱼工具
-- [Gorsair](https://github.com/Ullaakut/Gorsair) - Docker API利用
+- `GRPC_ENDPOINT` - Your Geyser RPC endpoint url.
+
+- `GRPC_X_TOKEN` - Leave it set to `None` if your Geyser RPC does not require a token for authentication.
 
 
-## 扫描工具
+- `GRPC_SERVER_ENDPOINT` - The address of its gRPC server. By default is set at `0.0.0.0:50051`.
 
-- [blacksheepwall](https://github.com/tomsteele/blacksheepwall) - Go语言编写的域名信息搜集工具
-- [amass](https://github.com/caffix/amass) - Go语言编写的子域名收集工具
-- [vuls](https://github.com/future-architect/vuls) - Go语言编写的Linux/FreeBSD漏洞扫描器
-- [gryffin](https://github.com/yahoo/gryffin) - 大规模Web安全扫描平台
-- [Gobuster](https://github.com/OJ/gobuster) - Kai下敏感目录扫描工具
-- [OnionScan](https://github.com/s-rah/onionscan/) - Go语言编写的暗网扫描仪
-- [x-crack](https://github.com/netxfly/x-crack) - Go语言编写的弱口令扫描器
-- [kraken](https://github.com/botherder/kraken) - Go语言编写的YARA跨平台扫描器
-- [Portscanner](https://github.com/djhohnstein/portscannern) - Go语言编写的端口扫描工具
-- [ffuf](https://github.com/ffuf/ffuf) -  Go语言编写的Web目录/DNS/参数Fuzz工具
-- [mongoBuster](https://github.com/yashpl/mongoBuster) - 扫描开放的MongoDB实例
-- [furious](https://github.com/liamg/furious) - Go语言编写的IP/端口扫描工具
-- [goscan](https://github.com/marco-lancini/goscan) - Go语言编写的交互式网络扫描器
-- [ipv666](https://github.com/lavalamp-/ipv666) - Golang实现的IPV6地址扫描
-- [trivy](https://github.com/aquasecurity/trivy) - 容器安全扫描
-- [crawlab](https://github.com/crawlab-team/crawlab) - 基于Golang的分布式爬虫管理平台
-- [subfinder](https://github.com/projectdiscovery/subfinder) - 子域名发现
-- [xray](https://github.com/chaitin/xray) - 安全评估工具，支持常见 web 安全问题扫描和自定义 poc
-- [crawlergo](https://github.com/0Kee-Team/crawlergo) - 一个使用chrome headless模式进行URL入口收集的动态爬虫
-- [hakrawler](https://github.com/hakluke/hakrawler) - Go Web爬虫，Web资产发现
-- [goscan](https://github.com/timest/goscan) - 简单高效的IPv4网络扫描，存活设备扫描
-- [naabu](https://github.com/projectdiscovery/naabu) - Go编写的端口扫描工具
+## Run Command
 
-## 网络工具
+```
+RUSTFLAGS="-C target-cpu=native" RUST_LOG=info cargo run --release --bin shredstream-decoder
+```
 
-- [GoReplay](https://github.com/buger/goreplay) - Go语言编写HTTP流量记录重放工具
-- [NATBypass](https://github.com/cw1997/NATBypass) -  LCX/Htran在Golang下的实现
-- [ngrok](https://github.com/inconshreveable/ngrok) -  反向代理/内网穿透工具
-- [brook](https://github.com/txthinking/brook) - Go语言编写的一款跨平台代理应用
-- [Venom](https://github.com/Dliv3/Venom) - 一款为渗透测试人员设计的使用Go开发的多级代理工具
-- [Hyperfox](https://github.com/malfunkt/hyperfox) - HTTP/HTTPS流量监控工具
-- [gost](https://github.com/ginuerzh/gost) - Go语言编写多功能网络代理转发工具
-- [gomitmproxy](https://github.com/sheepbao/gomitmproxy) - Go语言实现的Mitmproxy
-- [netcap](https://github.com/dreadl0ck/netcap) - Go语言编写的网络流量分析框架
-- [go-out](https://github.com/sensepost/go-out) - 用于在渗透测试时测试出站端口的工具
-- [bettercap](https://github.com/bettercap/bettercap) - 一款中间人攻击工具
-- [mitmengine](https://github.com/cloudflare/mitmengine) - 中间人攻击检测工具
-- [nps](https://github.com/cnlh/nps) - 一款轻量级、功能强大的内网穿透代理服务器
-- [goproxy](https://github.com/snail007/goproxy) - Golang实现的高性能理代理服务器
-- [frp](https://github.com/fatedier/frp) - Golang实现的反向代理工具
-- [chisel](https://github.com/jpillora/chisel) - 通过HTTP传输的TCP隧道
-- [dnscrypt-proxy](https://github.com/DNSCrypt/dnscrypt-proxy) - 支持加密的DNS协议代理
-- [inlets](https://github.com/inlets/inlets) - 防火墙和NAT穿透，映射工具
-- [dog-tunnel](https://github.com/vzex/dog-tunnel) - p2p隧道
-- [skydive](https://github.com/skydive-project/skydive) - 网络拓扑和协议分析工具
-- [mole](https://github.com/davrodpin/mole) - SSH隧道
+# Source code
 
-***
+If you are really interested in the source code, please contact me for details and demo on Discord: `.xanr`.
 
-## 致谢
+# Solana Copy Trading Bot
 
-- [Jirairya](http://b404.xyz/)
-- [ttttmr](https://github.com/ttttmr)
-- [kekeimiku](https://github.com/kekeimiku)
-- [neal1991](https://github.com/neal1991)
-- [b1rdb0y](https://github.com/b1rdb0y)
+A high-performance Rust-based application that monitors transactions from specific wallet addresses and automatically copies their trading activity on Solana DEXs like PumpFun and PumpSwap.
+
+## Features
+
+- **Real-time Transaction Monitoring** - Uses Yellowstone gRPC to get transaction data with minimal latency
+- **Multi-address Support** - Can monitor multiple wallet addresses simultaneously
+- **Protocol Support** - Compatible with PumpFun and PumpSwap DEX platforms
+- **Automated Trading** - Copies buy and sell transactions automatically when detected
+- **Notification System** - Sends trade alerts and status updates via Telegram
+- **Customizable Trading Parameters** - Configurable limits, timing, and amount settings
+- **Selling Strategy** - Includes built-in selling strategy options for maximizing profits
+
+## Project Structure
+
+The codebase is organized into several modules:
+
+- **engine/** - Core trading logic including copy trading, selling strategies, and transaction parsing
+- **dex/** - Protocol-specific implementations for PumpFun and PumpSwap
+- **common/** - Shared utilities, configuration, and constants
+- **core/** - Core system functionality
+- **error/** - Error handling and definitions
+
+## Setup
+
+### Environment Variables
+
+To run this bot, you will need to configure the following environment variables:
+
+#### Required Variables
+
+- `GRPC_ENDPOINT` - Your Yellowstone gRPC endpoint URL
+- `GRPC_X_TOKEN` - Your Yellowstone authentication token
+- `COPY_TRADING_TARGET_ADDRESS` - Wallet address(es) to monitor for trades (comma-separated for multiple addresses)
+
+#### Telegram Notifications
+
+To enable Telegram notifications:
+
+- `TELEGRAM_BOT_TOKEN` - Your Telegram bot token
+- `TELEGRAM_CHAT_ID` - Your chat ID for receiving notifications
+
+#### Optional Variables
+
+- `IS_MULTI_COPY_TRADING` - Set to `true` to monitor multiple addresses (default: `false`)
+- `PROTOCOL_PREFERENCE` - Preferred protocol to use (`pumpfun`, `pumpswap`, or `auto` for automatic detection)
+- `COUNTER_LIMIT` - Maximum number of trades to execute
+## Usage
+
+```bash
+# Build the project
+cargo build --release
+
+# Run the bot
+cargo run --release
+```
+
+Once started, the bot will:
+
+1. Connect to the Yellowstone gRPC endpoint
+2. Monitor transactions from the specified wallet address(es)
+3. Automatically copy buy and sell transactions as they occur
+4. Send notifications via Telegram for detected transactions and executed trades
+
+## Recent Updates
+
+- Added PumpSwap notification mode (can monitor without executing trades)
+- Implemented concurrent transaction processing using tokio tasks
+- Enhanced error handling and reporting
+- Improved selling strategy implementation
+
+## Contact
+
+For questions or support, please contact the developer.
