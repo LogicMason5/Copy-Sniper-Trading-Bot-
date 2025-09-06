@@ -1,8 +1,6 @@
-## Solana PumpFun/PumpSwap Copy/Sniper Trading Bot
+## Solana PumpFun/PumpSwap Raydium Copy/Sniper Trading Bot
 
-High-performance Rust bot that monitors wallets and DEX activity on Solana and automatically copies/snipes trades. It uses Yellowstone gRPC for low-latency transaction feeds, supports PumpFun and PumpSwap, and integrates a configurable selling engine with dynamic trailing stops. Jupiter is used for token liquidation.
-
-Note: Current PumpSwap mode is notification-only by default (no trade execution), while PumpFun executes trades. This can be extended in the `dex/` layer.
+High-performance Rust bot that monitors wallets and DEX activity on Solana and automatically copies/snipes trades. It supports PumpFun, PumpSwap,  Raydium launchpad, Raydium Cpmm, Raydium Amm, Meteora DBC and Meteora Damm. It integrates a configurable selling engine with dynamic trailing stops. Jupiter is used for token liquidation.
 
 ### Key Features
 
@@ -24,7 +22,7 @@ Note: Current PumpSwap mode is notification-only by default (no trade execution)
    - Target wallet monitoring (`processor/sniper_bot.rs`)
    - DEX monitoring (`processor/sniper_bot.rs`), protocol auto-detection or preference
 5. Parse candidate transactions/logs, filter excluded addresses and apply limits.
-6. Execute swaps (PumpFun) or notify (PumpSwap). Apply slippage and priority-fee settings; optionally use ZeroSlot mode.
+6. Execute swaps. Apply slippage and priority-fee settings; optionally use ZeroSlot mode.
 7. Manage positions with the selling strategy (TP/SL/dynamic trailing). Liquidation paths use Jupiter.
 8. Maintain a per-token 20-slot time-series (price, buy/sell volume) to detect post-drop bottoms, enabling sniper entries and informed copy trades.
 
