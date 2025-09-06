@@ -41,7 +41,7 @@ use spl_token_2022::extension::StateWithExtensionsOwned;
 
 use crate::common::logger::Logger;
 use crate::common::config::{AppState, SwapConfig, import_env_var};
-use crate::engine::sniper_bot::{BOUGHT_TOKEN_LIST, BoughtTokenInfo};
+use crate::processor::sniper_bot::{BOUGHT_TOKEN_LIST, BoughtTokenInfo};
 
 /// Risk management configuration
 pub struct RiskManagementConfig {
@@ -266,7 +266,7 @@ impl RiskManagementService {
         ).red().bold().to_string());
 
         // Use the existing emergency sell mechanism
-        crate::engine::sniper_bot::execute_enhanced_sell(
+        crate::processor::sniper_bot::execute_enhanced_sell(
             token_mint.to_string(),
             self.config.app_state.clone(),
             self.config.swap_config.clone(),
@@ -276,7 +276,7 @@ impl RiskManagementService {
         BOUGHT_TOKEN_LIST.remove(token_mint);
         
         // Check if all tokens are sold and stop streaming if needed
-        crate::engine::sniper_bot::check_and_stop_streaming_if_all_sold(&self.logger).await;
+        crate::processor::sniper_bot::check_and_stop_streaming_if_all_sold(&self.logger).await;
         
         self.logger.log(format!(
             "✅ Emergency sell completed and token {} removed from tracking",

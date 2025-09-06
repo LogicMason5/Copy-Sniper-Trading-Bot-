@@ -25,7 +25,7 @@ use crate::{
         logger::Logger,
         config::TransactionLandingMode,
     },
-    services::{
+    library::{
         zeroslot::{self, ZeroSlotClient},
     },
 };
@@ -61,7 +61,7 @@ static HTTP_CLIENT: Lazy<Client> = Lazy::new(|| {
 });
 
 pub async fn new_signed_and_send_zeroslot(
-    zeroslot_rpc_client: Arc<crate::services::zeroslot::ZeroSlotClient>,
+    zeroslot_rpc_client: Arc<crate::library::zeroslot::ZeroSlotClient>,
     recent_blockhash: solana_sdk::hash::Hash,
     keypair: &Keypair,
     mut instructions: Vec<Instruction>,
@@ -121,7 +121,7 @@ pub async fn new_signed_and_send_zeroslot_fast(
     compute_unit_limit: u32,
     compute_unit_price: u64,
     tip_lamports: u64,
-    zeroslot_rpc_client: Arc<crate::services::zeroslot::ZeroSlotClient>,
+    zeroslot_rpc_client: Arc<crate::library::zeroslot::ZeroSlotClient>,
     recent_blockhash: solana_sdk::hash::Hash,
     keypair: &Keypair,
     mut instructions: Vec<Instruction>,

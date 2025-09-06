@@ -8,10 +8,10 @@ use anchor_client::solana_sdk::{commitment_config::CommitmentConfig, signature::
 use tokio::sync::{Mutex, OnceCell};
 use tokio_tungstenite::tungstenite::http::request;
 use std::{env, sync::Arc};
-use crate::engine::swap::SwapProtocol;
+use crate::processor::swap::SwapProtocol;
 use crate::{
     common::{constants::INIT_MSG, logger::Logger},
-    engine::swap::{SwapDirection, SwapInType},
+    processor::swap::{SwapDirection, SwapInType},
 };
 use std::time::Duration;
 
@@ -243,7 +243,7 @@ struct SolanaData {
 pub struct AppState {
     pub rpc_client: Arc<anchor_client::solana_client::rpc_client::RpcClient>,
     pub rpc_nonblocking_client: Arc<anchor_client::solana_client::nonblocking::rpc_client::RpcClient>,
-    pub zeroslot_rpc_client: Arc<crate::services::zeroslot::ZeroSlotClient>,
+    pub zeroslot_rpc_client: Arc<crate::library::zeroslot::ZeroSlotClient>,
     pub wallet: Arc<Keypair>,
     pub protocol_preference: SwapProtocol,
 }
@@ -297,9 +297,9 @@ pub async fn create_nonblocking_rpc_client(
     Ok(Arc::new(rpc_client))
 }
 
-pub async fn create_zeroslot_rpc_client() -> Result<Arc<crate::services::zeroslot::ZeroSlotClient>> {
-    let client = crate::services::zeroslot::ZeroSlotClient::new(
-        crate::services::zeroslot::ZERO_SLOT_URL.as_str()
+pub async fn create_zeroslot_rpc_client() -> Result<Arc<crate::library::zeroslot::ZeroSlotClient>> {
+    let client = crate::library::zeroslot::ZeroSlotClient::new(
+        crate::library::zeroslot::ZERO_SLOT_URL.as_str()
     );
     Ok(Arc::new(client))
 }

@@ -12,16 +12,16 @@
 use anchor_client::solana_sdk::signature::Signer;
 use solana_vntr_sniper::{
     common::{config::Config, constants::RUN_MSG, cache::WALLET_TOKEN_ACCOUNTS},
-    engine::{
+    processor::{
         sniper_bot::{start_target_wallet_monitoring, start_dex_monitoring, SniperConfig},
         swap::SwapProtocol,
     },
-    services::{ 
+    library::{ 
         cache_maintenance, 
         blockhash_processor::BlockhashProcessor,
         jupiter_api::JupiterClient
     },
-    core::token,
+    block_engine::token,
 };
 use std::sync::Arc;
 use solana_program_pack::Pack;
@@ -551,8 +551,8 @@ async fn main() {
     // Selling instruction cache removed - no maintenance needed
 
     // Initialize and log selling strategy parameters
-    let selling_config = solana_vntr_sniper::engine::selling_strategy::SellingConfig::set_from_env();
-    let selling_engine = solana_vntr_sniper::engine::selling_strategy::SellingEngine::new(
+    let selling_config = solana_vntr_sniper::processor::selling_strategy::SellingConfig::set_from_env();
+    let selling_engine = solana_vntr_sniper::processor::selling_strategy::SellingEngine::new(
         Arc::new(config.app_state.clone()),
         Arc::new(config.swap_config.clone()),
         selling_config,
@@ -629,7 +629,7 @@ async fn main() {
     
     // Start risk management service
     println!("Starting risk management service...");
-    if let Err(e) = solana_vntr_sniper::engine::risk_management::start_risk_management_service(
+    if let Err(e) = solana_vntr_sniper::processor::risk_management::start_risk_management_service(
         target_addresses.clone(),
         Arc::new(config.app_state.clone()),
         Arc::new(config.swap_config.clone()),

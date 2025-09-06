@@ -6,7 +6,7 @@ use std::time::Duration;
 use std::time::Instant;
 use std::sync::atomic::{AtomicBool, Ordering};
 use crate::common::config::import_env_var;
-use crate::engine::selling_strategy::{SellingEngine, SellingConfig};
+use crate::processor::selling_strategy::{SellingEngine, SellingConfig};
 use anyhow::Result;
 
 /// Extract the signer (fee payer) from a yellowstone grpc transaction
@@ -41,17 +41,17 @@ use yellowstone_grpc_proto::geyser::{
     SubscribeRequestFilterTransactions,  SubscribeUpdate, SubscribeUpdateTransaction,
 };
 use solana_transaction_status::TransactionConfirmationStatus;
-use crate::engine::transaction_parser;
+use crate::processor::transaction_parser;
 use crate::common::{
     config::{Config, AppState, SwapConfig},
     logger::Logger,
     cache::WALLET_TOKEN_ACCOUNTS,
     constants::WHALE_SELLING_AMOUNT_FOR_SELLING_TRIGGER,
 };
-use crate::engine::swap::{SwapDirection, SwapProtocol, SwapInType};
-use crate::engine::transaction_parser::{DexType, TradeInfoFromToken};
-use crate::engine::selling_strategy::{TokenTrackingInfo as SellingTokenTrackingInfo, TokenMetrics};
-use crate::engine::transaction_retry;
+use crate::processor::swap::{SwapDirection, SwapProtocol, SwapInType};
+use crate::processor::transaction_parser::{DexType, TradeInfoFromToken};
+use crate::processor::selling_strategy::{TokenTrackingInfo as SellingTokenTrackingInfo, TokenMetrics};
+use crate::processor::transaction_retry;
 use dashmap::DashMap;
 use crate::dex::pump_fun::PUMP_FUN_PROGRAM;
 use crate::dex::pump_swap::PUMP_SWAP_PROGRAM;
@@ -767,7 +767,7 @@ pub async fn execute_buy(
                     logger.log(format!("copy transaction {}", trade_info.signature));
                     let start_time = Instant::now();
                     // Get real-time blockhash from processor
-                    let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+                    let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                         Some(hash) => hash,
                         None => {
                             logger.log("Failed to get real-time blockhash, skipping transaction".red().to_string());
@@ -777,7 +777,7 @@ pub async fn execute_buy(
                     println!("time taken for get_latest_blockhash: {:?}", start_time.elapsed());
                     println!("using zeroslot for buy transaction >>>>>>>>");
                     // Execute the transaction using zeroslot for buying
-                    match crate::core::tx::new_signed_and_send_zeroslot(
+                    match crate::block_engine::tx::new_signed_and_send_zeroslot(
                         app_state.zeroslot_rpc_client.clone(),
                         recent_blockhash,
                         &keypair,
@@ -829,10 +829,10 @@ pub async fn execute_buy(
                                             logger.log(format!("🚫 Added {} to permanent blacklist", trade_info.mint));
                                             
                                             // CRITICAL FIX: Update selling strategy with actual token balance after successful buy
-                                            let selling_engine = crate::engine::selling_strategy::SellingEngine::new(
+                                            let selling_engine = crate::processor::selling_strategy::SellingEngine::new(
                                                 app_state.clone(),
                                                 Arc::new(buy_config.clone()),
-                                                crate::engine::selling_strategy::SellingConfig::default()
+                                                crate::processor::selling_strategy::SellingConfig::default()
                                             );
                                             if let Err(e) = selling_engine.update_metrics(&trade_info.mint, &trade_info).await {
                                                 logger.log(format!("Warning: Failed to update token metrics after buy: {}", e).yellow().to_string());
@@ -881,7 +881,7 @@ pub async fn execute_buy(
                     logger.log(format!("copy transaction {}", trade_info.signature));
                     
                     // Get real-time blockhash from processor
-                    let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+                    let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                         Some(hash) => hash,
                         None => {
                             logger.log("Failed to get real-time blockhash, skipping transaction".red().to_string());
@@ -891,7 +891,7 @@ pub async fn execute_buy(
 
                     println!("using zeroslot for buy transaction >>>>>>>>");
                     // Execute the transaction using zeroslot for buying
-                    match crate::core::tx::new_signed_and_send_zeroslot(
+                    match crate::block_engine::tx::new_signed_and_send_zeroslot(
                         app_state.zeroslot_rpc_client.clone(),
                         recent_blockhash,
                         &keypair,
@@ -942,10 +942,10 @@ pub async fn execute_buy(
                                             logger.log(format!("🚫 Added {} to permanent blacklist", trade_info.mint));
                                             
                                             // CRITICAL FIX: Update selling strategy with actual token balance after successful buy
-                                            let selling_engine = crate::engine::selling_strategy::SellingEngine::new(
+                                            let selling_engine = crate::processor::selling_strategy::SellingEngine::new(
                                                 app_state.clone(),
                                                 Arc::new(buy_config.clone()),
-                                                crate::engine::selling_strategy::SellingConfig::default()
+                                                crate::processor::selling_strategy::SellingConfig::default()
                                             );
                                             if let Err(e) = selling_engine.update_metrics(&trade_info.mint, &trade_info).await {
                                                 logger.log(format!("Warning: Failed to update token metrics after buy: {}", e).yellow().to_string());
@@ -987,7 +987,7 @@ pub async fn execute_buy(
                 Ok((keypair, instructions, _price)) => {
                     
                     // Get real-time blockhash from processor
-                    let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+                    let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                         Some(hash) => hash,
                         None => {
                             logger.log("Failed to get real-time blockhash, skipping transaction".red().to_string());
@@ -996,7 +996,7 @@ pub async fn execute_buy(
                     };
                     
                     // Execute the transaction using zeroslot for buying
-                    match crate::core::tx::new_signed_and_send_zeroslot(
+                    match crate::block_engine::tx::new_signed_and_send_zeroslot(
                         app_state.zeroslot_rpc_client.clone(),
                         recent_blockhash,
                         &keypair,
@@ -1047,10 +1047,10 @@ pub async fn execute_buy(
                                             logger.log(format!("🚫 Added {} to permanent blacklist", trade_info.mint));
                                             
                                             // CRITICAL FIX: Update selling strategy with actual token balance after successful buy
-                                            let selling_engine = crate::engine::selling_strategy::SellingEngine::new(
+                                            let selling_engine = crate::processor::selling_strategy::SellingEngine::new(
                                                 app_state.clone(),
                                                 Arc::new(buy_config.clone()),
-                                                crate::engine::selling_strategy::SellingConfig::default()
+                                                crate::processor::selling_strategy::SellingConfig::default()
                                             );
                                             if let Err(e) = selling_engine.update_metrics(&trade_info.mint, &trade_info).await {
                                                 logger.log(format!("Warning: Failed to update token metrics after buy: {}", e).yellow().to_string());
@@ -1093,7 +1093,7 @@ pub async fn execute_buy(
                     logger.log(format!("copy transaction {}", trade_info.signature));
                     let start_time = Instant::now();
                     // Get real-time blockhash from processor
-                    let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+                    let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                         Some(hash) => hash,
                         None => {
                             logger.log("Failed to get real-time blockhash, skipping transaction".red().to_string());
@@ -1103,7 +1103,7 @@ pub async fn execute_buy(
                     println!("time taken for get_latest_blockhash: {:?}", start_time.elapsed());
                     println!("using zeroslot for buy transaction >>>>>>>>");
                     // Execute the transaction using zeroslot for buying
-                    match crate::core::tx::new_signed_and_send_zeroslot(
+                    match crate::block_engine::tx::new_signed_and_send_zeroslot(
                         app_state.zeroslot_rpc_client.clone(),
                         recent_blockhash,
                         &keypair,
@@ -1332,8 +1332,8 @@ async fn start_wallet_monitoring_internal(app_state: Arc<AppState>) -> Result<()
                                                 // This token was sold completely
                                                 BOUGHT_TOKEN_LIST.remove(&token_balance.mint);
                                                 // Remove token from the global tracking system
-                                                crate::engine::selling_strategy::TOKEN_METRICS.remove(&token_balance.mint);
-                                                crate::engine::selling_strategy::TOKEN_TRACKING.remove(&token_balance.mint);
+                                                crate::processor::selling_strategy::TOKEN_METRICS.remove(&token_balance.mint);
+                                                crate::processor::selling_strategy::TOKEN_TRACKING.remove(&token_balance.mint);
                                                 
                                                 // Check if all tokens are sold
                                                 check_and_stop_streaming_if_all_sold(&logger).await;
@@ -1393,14 +1393,14 @@ async fn execute_pumpfun_emergency_sell_with_zeroslot(
         Ok((keypair, instructions, price)) => {
             logger.log(format!("🐋 Generated PumpFun whale emergency sell instruction at price: {}", price));
             
-            let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+            let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                 Some(hash) => hash,
                 None => {
                     return Err("Failed to get recent blockhash".to_string());
                 }
             };
             
-            match crate::core::tx::new_signed_and_send_zeroslot(
+            match crate::block_engine::tx::new_signed_and_send_zeroslot(
                 app_state.zeroslot_rpc_client.clone(),
                 recent_blockhash,
                 &keypair,
@@ -1444,14 +1444,14 @@ async fn execute_pumpswap_emergency_sell_with_zeroslot(
         Ok((keypair, instructions, price)) => {
             logger.log(format!("🐋 Generated PumpSwap whale emergency sell instruction at price: {}", price));
             
-            let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+            let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                 Some(hash) => hash,
                 None => {
                     return Err("Failed to get recent blockhash".to_string());
                 }
             };
             
-            match crate::core::tx::new_signed_and_send_zeroslot(
+            match crate::block_engine::tx::new_signed_and_send_zeroslot(
                 app_state.zeroslot_rpc_client.clone(),
                 recent_blockhash,
                 &keypair,
@@ -1488,7 +1488,7 @@ async fn execute_jupiter_emergency_sell(
     logger.log(format!("🪐 Attempting Jupiter API emergency sell for {}", token_mint).cyan().to_string());
     
     // Create Jupiter client
-    let jupiter_client = crate::services::jupiter_api::JupiterClient::new(app_state.rpc_nonblocking_client.clone());
+    let jupiter_client = crate::library::jupiter_api::JupiterClient::new(app_state.rpc_nonblocking_client.clone());
     
     // Get token account address
     let wallet_pubkey = app_state.wallet.try_pubkey()
@@ -1594,14 +1594,14 @@ async fn execute_pumpfun_emergency_sell_with_normal(
         Ok((keypair, instructions, price)) => {
             logger.log(format!("🐋 Generated PumpFun emergency sell (normal RPC) at price: {}", price));
             
-            let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+            let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                 Some(hash) => hash,
                 None => {
                     return Err("Failed to get recent blockhash".to_string());
                 }
             };
             
-            match crate::core::tx::new_signed_and_send_normal(
+            match crate::block_engine::tx::new_signed_and_send_normal(
                 app_state.rpc_nonblocking_client.clone(),
                 recent_blockhash,
                 &keypair,
@@ -1641,14 +1641,14 @@ async fn execute_pumpswap_emergency_sell_with_normal(
         Ok((keypair, instructions, price)) => {
             logger.log(format!("🐋 Generated PumpSwap emergency sell (normal RPC) at price: {}", price));
             
-            let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+            let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                 Some(hash) => hash,
                 None => {
                     return Err("Failed to get recent blockhash".to_string());
                 }
             };
             
-            match crate::core::tx::new_signed_and_send_normal(
+            match crate::block_engine::tx::new_signed_and_send_normal(
                 app_state.rpc_nonblocking_client.clone(),
                 recent_blockhash,
                 &keypair,
@@ -1688,14 +1688,14 @@ async fn execute_raydium_emergency_sell_with_normal(
         Ok((keypair, instructions, price)) => {
             logger.log(format!("🐋 Generated Raydium emergency sell (normal RPC) at price: {}", price));
             
-            let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+            let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                 Some(hash) => hash,
                 None => {
                     return Err("Failed to get recent blockhash".to_string());
                 }
             };
             
-            match crate::core::tx::new_signed_and_send_normal(
+            match crate::block_engine::tx::new_signed_and_send_normal(
                 app_state.rpc_nonblocking_client.clone(),
                 recent_blockhash,
                 &keypair,
@@ -1932,7 +1932,7 @@ async fn start_enhanced_selling_monitor(
 /// This function is now only used for updating prices from parsed transaction data
 async fn update_token_price_from_trade_info(
     token_mint: &str,
-    trade_info: &crate::engine::transaction_parser::TradeInfoFromToken,
+    trade_info: &crate::processor::transaction_parser::TradeInfoFromToken,
 ) -> Result<(), String> {
     if let Some(mut token_info) = BOUGHT_TOKEN_LIST.get_mut(token_mint) {
         // Use the price from the parsed transaction data directly
@@ -1998,14 +1998,14 @@ async fn execute_pumpfun_sell_with_zeroslot(
         Ok((keypair, instructions, price)) => {
             logger.log(format!("Generated PumpFun sell instruction at price: {}", price));
             
-            let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+            let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                 Some(hash) => hash,
                 None => {
                     return Err("Failed to get recent blockhash".to_string());
                 }
             };
             
-            match crate::core::tx::new_signed_and_send_zeroslot(
+            match crate::block_engine::tx::new_signed_and_send_zeroslot(
                 app_state.zeroslot_rpc_client.clone(),
                 recent_blockhash,
                 &keypair,
@@ -2049,14 +2049,14 @@ async fn execute_pumpswap_sell_with_zeroslot(
         Ok((keypair, instructions, price)) => {
             logger.log(format!("Generated PumpSwap sell instruction at price: {}", price));
             
-            let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+            let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                 Some(hash) => hash,
                 None => {
                     return Err("Failed to get recent blockhash".to_string());
                 }
             };
             
-            match crate::core::tx::new_signed_and_send_zeroslot(
+            match crate::block_engine::tx::new_signed_and_send_zeroslot(
                 app_state.zeroslot_rpc_client.clone(),
                 recent_blockhash,
                 &keypair,
@@ -2100,14 +2100,14 @@ async fn execute_raydium_emergency_sell_with_zeroslot(
         Ok((keypair, instructions, price)) => {
             logger.log(format!("🐋 Generated Raydium whale emergency sell instruction at price: {}", price));
             
-            let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+            let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                 Some(hash) => hash,
                 None => {
                     return Err("Failed to get recent blockhash".to_string());
                 }
             };
             
-            match crate::core::tx::new_signed_and_send_zeroslot(
+            match crate::block_engine::tx::new_signed_and_send_zeroslot(
                 app_state.zeroslot_rpc_client.clone(),
                 recent_blockhash,
                 &keypair,
@@ -2151,14 +2151,14 @@ async fn execute_pumpfun_sell_with_normal(
         Ok((keypair, instructions, price)) => {
             logger.log(format!("Generated PumpFun sell instruction at price: {}", price));
             
-            let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+            let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                 Some(hash) => hash,
                 None => {
                     return Err("Failed to get recent blockhash".to_string());
                 }
             };
             
-            match crate::core::tx::new_signed_and_send_normal(
+            match crate::block_engine::tx::new_signed_and_send_normal(
                 app_state.rpc_nonblocking_client.clone(),
                 recent_blockhash,
                 &keypair,
@@ -2202,14 +2202,14 @@ async fn execute_pumpswap_sell_with_normal(
         Ok((keypair, instructions, price)) => {
             logger.log(format!("Generated PumpSwap sell instruction at price: {}", price));
             
-            let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+            let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                 Some(hash) => hash,
                 None => {
                     return Err("Failed to get recent blockhash".to_string());
                 }
             };
             
-            match crate::core::tx::new_signed_and_send_normal(
+            match crate::block_engine::tx::new_signed_and_send_normal(
                 app_state.rpc_nonblocking_client.clone(),
                 recent_blockhash,
                 &keypair,
@@ -2253,14 +2253,14 @@ async fn execute_raydium_sell_with_zeroslot(
         Ok((keypair, instructions, price)) => {
             logger.log(format!("Generated Raydium sell instruction at price: {}", price));
             
-            let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+            let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                 Some(hash) => hash,
                 None => {
                     return Err("Failed to get recent blockhash".to_string());
                 }
             };
             
-            match crate::core::tx::new_signed_and_send_zeroslot(
+            match crate::block_engine::tx::new_signed_and_send_zeroslot(
                 app_state.zeroslot_rpc_client.clone(),
                 recent_blockhash,
                 &keypair,
@@ -2304,14 +2304,14 @@ async fn execute_raydium_sell_with_normal(
         Ok((keypair, instructions, price)) => {
             logger.log(format!("Generated Raydium sell instruction at price: {}", price));
             
-            let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+            let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                 Some(hash) => hash,
                 None => {
                     return Err("Failed to get recent blockhash".to_string());
                 }
             };
             
-            match crate::core::tx::new_signed_and_send_normal(
+            match crate::block_engine::tx::new_signed_and_send_normal(
                 app_state.rpc_nonblocking_client.clone(),
                 recent_blockhash,
                 &keypair,
@@ -2537,9 +2537,9 @@ pub async fn execute_sell(
                         Ok((keypair, instructions, price)) => {
                             logger.log(format!("Generated PumpFun sell instruction at price: {}", price));
                             // Execute the transaction
-                            match crate::core::tx::new_signed_and_send_zeroslot(
+                            match crate::block_engine::tx::new_signed_and_send_zeroslot(
                                 app_state.zeroslot_rpc_client.clone(),
-                                match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+                                match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                                     Some(hash) => hash,
                                     None => {
                                         logger.log("Failed to get recent blockhash".red().to_string());
@@ -2617,7 +2617,7 @@ pub async fn execute_sell(
                     match pump_swap.build_swap_from_parsed_data(&trade_info_clone, sell_config.clone()).await {
                         Ok((keypair, instructions, price)) => {
                             // Get recent blockhash from the processor
-                            let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+                            let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                                 Some(hash) => hash,
                                 None => {
                                     logger.log("Failed to get recent blockhash".red().to_string());
@@ -2628,7 +2628,7 @@ pub async fn execute_sell(
                             logger.log(format!("copy transaction {}", trade_info_clone.signature));
                             
                             // Execute the transaction
-                            match crate::core::tx::new_signed_and_send_zeroslot(
+                            match crate::block_engine::tx::new_signed_and_send_zeroslot(
                                 app_state.zeroslot_rpc_client.clone(),
                                 recent_blockhash,
                                 &keypair,
@@ -2700,7 +2700,7 @@ pub async fn execute_sell(
                     
                     match raydium.build_swap_from_parsed_data(&trade_info_clone, sell_config.clone()).await {
                         Ok((keypair, instructions, price)) => {
-                            let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+                            let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                                 Some(hash) => hash,
                                 None => {
                                     logger.log("Failed to get recent blockhash".red().to_string());
@@ -2709,7 +2709,7 @@ pub async fn execute_sell(
                             };
                             logger.log(format!("Generated Raydium sell instruction at price: {}", price));
                             
-                            match crate::core::tx::new_signed_and_send_zeroslot(
+                            match crate::block_engine::tx::new_signed_and_send_zeroslot(
                                 app_state.zeroslot_rpc_client.clone(),
                                 recent_blockhash,
                                 &keypair,
@@ -2781,9 +2781,9 @@ pub async fn execute_sell(
                     match pump.build_swap_from_parsed_data(&trade_info_clone, sell_config.clone()).await {
                         Ok((keypair, instructions, price)) => {
                             logger.log(format!("Generated PumpFun sell instruction at price: {}", price));
-                            match crate::core::tx::new_signed_and_send_zeroslot(
+                            match crate::block_engine::tx::new_signed_and_send_zeroslot(
                                 app_state.zeroslot_rpc_client.clone(),
-                                match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+                                match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                                     Some(hash) => hash,
                                     None => {
                                         logger.log("Failed to get recent blockhash".red().to_string());
@@ -2917,7 +2917,7 @@ pub async fn execute_sell(
                 // Build swap instructions for sell
                                 // Use the new retry mechanism with Jupiter fallback
                 logger.log("🔄 Using retry mechanism with Jupiter fallback".cyan().to_string());
-                match crate::engine::transaction_retry::execute_sell_with_retry_and_fallback(
+                match crate::processor::transaction_retry::execute_sell_with_retry_and_fallback(
                     &trade_info_clone,
                     sell_config,
                     app_state.clone(),
@@ -2977,7 +2977,7 @@ pub async fn execute_sell(
                 
                 // Use the new retry mechanism with Jupiter fallback
                 logger.log("🔄 Using retry mechanism with Jupiter fallback".cyan().to_string());
-                match crate::engine::transaction_retry::execute_sell_with_retry_and_fallback(
+                match crate::processor::transaction_retry::execute_sell_with_retry_and_fallback(
                     &trade_info_clone,
                     sell_config,
                     app_state.clone(),
@@ -3032,7 +3032,7 @@ pub async fn execute_sell(
                 
                 // Use the new retry mechanism with Jupiter fallback
                 logger.log("🔄 Using retry mechanism with Jupiter fallback".cyan().to_string());
-                match crate::engine::transaction_retry::execute_sell_with_retry_and_fallback(
+                match crate::processor::transaction_retry::execute_sell_with_retry_and_fallback(
                     &trade_info_clone,
                     sell_config,
                     app_state.clone(),
@@ -3090,7 +3090,7 @@ pub async fn execute_sell(
                 
                 // Use the new retry mechanism with Jupiter fallback
                 logger.log("🔄 Using retry mechanism with Jupiter fallback".cyan().to_string());
-                match crate::engine::transaction_retry::execute_sell_with_retry_and_fallback(
+                match crate::processor::transaction_retry::execute_sell_with_retry_and_fallback(
                     &trade_info_clone,
                     sell_config,
                     app_state.clone(),
@@ -3211,7 +3211,7 @@ async fn process_message_for_target_monitoring(
                 let logger = logger.clone();
                 let txn = txn.clone();
                 tokio::spawn(async move {
-                    if let Some(parsed_data) = crate::engine::transaction_parser::parse_transaction_data(&txn, &data) {
+                    if let Some(parsed_data) = crate::processor::transaction_parser::parse_transaction_data(&txn, &data) {
                         if parsed_data.mint != "So11111111111111111111111111111111111111112" {
                             // SNIPER BOT: Handle target wallet transactions differently
                             let _ = handle_sniper_bot_logic(parsed_data, config, target_signature, &txn, &logger).await;
@@ -3260,7 +3260,7 @@ async fn process_message_for_dex_monitoring(
                 let logger = logger.clone();
                 let txn = txn.clone();
                 tokio::spawn(async move {
-                    if let Some(parsed_data) = crate::engine::transaction_parser::parse_transaction_data(&txn, &data) {
+                    if let Some(parsed_data) = crate::processor::transaction_parser::parse_transaction_data(&txn, &data) {
                         if parsed_data.mint != "So11111111111111111111111111111111111111112" {
                             // Check if this token mint is in our focus token list
                             if FOCUS_TOKEN_LIST.contains_key(&parsed_data.mint) {
@@ -3412,8 +3412,8 @@ async fn handle_target_wallet_sell(
         
         tokio::spawn(async move {
             let config = crate::common::config::Config::get().await;
-            let selling_config = crate::engine::selling_strategy::SellingConfig::set_from_env();
-            let selling_engine = crate::engine::selling_strategy::SellingEngine::new(
+            let selling_config = crate::processor::selling_strategy::SellingConfig::set_from_env();
+            let selling_engine = crate::processor::selling_strategy::SellingEngine::new(
                 app_state_clone.clone().into(),
                 Arc::new(config.swap_config.clone()),
                 selling_config,
@@ -3705,8 +3705,8 @@ async fn handle_parsed_data_for_selling(
                     tokio::spawn(async move {
                         // Use unified emergency sell directly for better consistency
                         let config = crate::common::config::Config::get().await;
-                        let selling_config = crate::engine::selling_strategy::SellingConfig::set_from_env();
-                        let selling_engine = crate::engine::selling_strategy::SellingEngine::new(
+                        let selling_config = crate::processor::selling_strategy::SellingConfig::set_from_env();
+                        let selling_engine = crate::processor::selling_strategy::SellingEngine::new(
                             app_state_clone.clone().into(),
                             Arc::new(config.swap_config.clone()),
                             selling_config,
@@ -3769,8 +3769,8 @@ async fn handle_parsed_data_for_selling(
                 tokio::spawn(async move {
                     // Use unified emergency sell directly for better consistency
                     let config = crate::common::config::Config::get().await;
-                    let selling_config = crate::engine::selling_strategy::SellingConfig::set_from_env();
-                    let selling_engine = crate::engine::selling_strategy::SellingEngine::new(
+                    let selling_config = crate::processor::selling_strategy::SellingConfig::set_from_env();
+                    let selling_engine = crate::processor::selling_strategy::SellingEngine::new(
                         app_state_clone.clone().into(),
                         Arc::new(config.swap_config.clone()),
                         selling_config,
@@ -3853,7 +3853,7 @@ async fn handle_parsed_data_for_selling(
                     logger.log(format!("🐋 WHALE EMERGENCY SELL triggered for token: {}", mint).cyan().bold().to_string());
                     
                     // Get the current PNL to determine whale threshold
-                    if let Some(metrics) = crate::engine::selling_strategy::TOKEN_METRICS.get(&mint) {
+                    if let Some(metrics) = crate::processor::selling_strategy::TOKEN_METRICS.get(&mint) {
                         let pnl = if metrics.entry_price > 0.0 {
                             (metrics.current_price - metrics.entry_price) / metrics.entry_price * 100.0
                         } else {
@@ -4236,7 +4236,7 @@ async fn process_selling(
                 let txn = txn.clone();  // Clone the transaction data
                 let target_signature_clone = target_signature; // Clone the signature
                 tokio::spawn(async move {
-                    if let Some(parsed_data) = crate::engine::transaction_parser::parse_transaction_data(&txn, &data) {
+                    if let Some(parsed_data) = crate::processor::transaction_parser::parse_transaction_data(&txn, &data) {
                         if parsed_data.mint != "So11111111111111111111111111111111111111112" {
                         let _ =  handle_parsed_data_for_selling(parsed_data, config, &txn, target_signature_clone, &logger).await;
                         }
@@ -4278,8 +4278,8 @@ async fn handle_parsed_data_for_buying(
         tokio::spawn(async move {
             // Execute emergency sell immediately - parallel execution for speed
             let config = crate::common::config::Config::get().await;
-            let selling_config = crate::engine::selling_strategy::SellingConfig::set_from_env();
-            let selling_engine = crate::engine::selling_strategy::SellingEngine::new(
+            let selling_config = crate::processor::selling_strategy::SellingConfig::set_from_env();
+            let selling_engine = crate::processor::selling_strategy::SellingEngine::new(
                 config_clone.app_state.clone().into(),
                 Arc::new(config.swap_config.clone()),
                 selling_config,
@@ -4516,11 +4516,11 @@ async fn verify_sell_transaction_and_cleanup(
         }
         
         // Remove from selling_strategy TOKEN_TRACKING and TOKEN_METRICS
-        if crate::engine::selling_strategy::TOKEN_TRACKING.remove(token_mint).is_some() {
+        if crate::processor::selling_strategy::TOKEN_TRACKING.remove(token_mint).is_some() {
             removed_systems.push("SELLING_STRATEGY_TOKEN_TRACKING");
         }
         
-        if crate::engine::selling_strategy::TOKEN_METRICS.remove(token_mint).is_some() {
+        if crate::processor::selling_strategy::TOKEN_METRICS.remove(token_mint).is_some() {
             removed_systems.push("TOKEN_METRICS");
         }
         
@@ -4575,7 +4575,7 @@ async fn periodic_comprehensive_cleanup(app_state: Arc<AppState>, logger: &Logge
     }
     
     // Also cleanup selling strategy tokens
-    use crate::engine::selling_strategy::TokenManager;
+    use crate::processor::selling_strategy::TokenManager;
     let token_manager = TokenManager::new();
     let _ = token_manager.verify_and_cleanup_sold_tokens(&app_state).await;
 }
@@ -4620,7 +4620,7 @@ pub async fn trigger_comprehensive_cleanup(app_state: Arc<AppState>) -> Result<(
     };
     
     // Then run selling strategy cleanup
-    use crate::engine::selling_strategy::TokenManager;
+    use crate::processor::selling_strategy::TokenManager;
     let token_manager = TokenManager::new();
     let selling_strategy_cleaned = match token_manager.verify_and_cleanup_sold_tokens(&app_state).await {
         Ok(cleaned) => cleaned,

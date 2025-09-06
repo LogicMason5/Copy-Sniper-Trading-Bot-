@@ -12,7 +12,7 @@ use solana_sdk::{
     system_program,
     signer::Signer,
 };
-use crate::engine::transaction_parser::DexType;
+use crate::processor::transaction_parser::DexType;
 use spl_associated_token_account::{
     get_associated_token_address,
     instruction::create_associated_token_account_idempotent
@@ -22,8 +22,8 @@ use spl_token::ui_amount_to_amount;
 
 use crate::{
     common::{config::SwapConfig, logger::Logger, cache::WALLET_TOKEN_ACCOUNTS},
-    core::token,
-    engine::swap::{SwapDirection, SwapInType},
+    block_engine::token,
+    processor::swap::{SwapDirection, SwapInType},
 };
 
 pub const TOKEN_PROGRAM: Pubkey = solana_sdk::pubkey!("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
@@ -97,7 +97,7 @@ impl Raydium {
 
     async fn get_or_fetch_pool_info(
         &self,
-        trade_info: &crate::engine::transaction_parser::TradeInfoFromToken,
+        trade_info: &crate::processor::transaction_parser::TradeInfoFromToken,
         mint: Pubkey
     ) -> Result<RaydiumPool> {
         // Use pool_id from trade_info instead of fetching it dynamically
@@ -153,7 +153,7 @@ impl Raydium {
     // Highly optimized build_swap_from_parsed_data
     pub async fn build_swap_from_parsed_data(
         &self,
-        trade_info: &crate::engine::transaction_parser::TradeInfoFromToken,
+        trade_info: &crate::processor::transaction_parser::TradeInfoFromToken,
         swap_config: SwapConfig,
     ) -> Result<(Arc<Keypair>, Vec<Instruction>, f64)> {
         let owner = self.keypair.pubkey();

@@ -18,10 +18,10 @@ use crate::common::{
     config::{AppState, SwapConfig},
     logger::Logger,
 };
-use crate::engine::swap::SwapDirection;
-use crate::services::jupiter_api::JupiterClient;
-use crate::engine::transaction_parser::TradeInfoFromToken;
-use crate::core::tx;
+use crate::processor::swap::SwapDirection;
+use crate::library::jupiter_api::JupiterClient;
+use crate::processor::transaction_parser::TradeInfoFromToken;
+use crate::block_engine::tx;
 
 /// Maximum number of retry attempts for selling transactions
 const MAX_RETRIES: u32 = 3;
@@ -198,13 +198,13 @@ async fn execute_single_sell_attempt(
 ) -> Result<Signature> {
     // Determine which DEX to use based on trade info
     match trade_info.dex_type {
-        crate::engine::transaction_parser::DexType::PumpFun => {
+        crate::processor::transaction_parser::DexType::PumpFun => {
             execute_pumpfun_sell_attempt(trade_info, sell_config, app_state, logger).await
         }
-        crate::engine::transaction_parser::DexType::PumpSwap => {
+        crate::processor::transaction_parser::DexType::PumpSwap => {
             execute_pumpswap_sell_attempt(trade_info, sell_config, app_state, logger).await
         }
-        crate::engine::transaction_parser::DexType::RaydiumLaunchpad => {
+        crate::processor::transaction_parser::DexType::RaydiumLaunchpad => {
             execute_raydium_sell_attempt(trade_info, sell_config, app_state, logger).await
         }
         _ => {
@@ -230,10 +230,10 @@ async fn execute_pumpfun_sell_attempt(
     let (keypair, instructions, _price) = pump.build_swap_from_parsed_data(trade_info, sell_config).await
         .map_err(|e| anyhow!("Failed to build PumpFun swap: {}", e))?;
 
-    let recent_blockhash = crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await
+    let recent_blockhash = crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await
         .ok_or_else(|| anyhow!("Failed to get recent blockhash"))?;
 
-    let signatures = crate::core::tx::new_signed_and_send_with_landing_mode(
+    let signatures = crate::block_engine::tx::new_signed_and_send_with_landing_mode(
         crate::common::config::TransactionLandingMode::Normal,
         &app_state,
         recent_blockhash,
@@ -268,10 +268,10 @@ async fn execute_raydium_sell_attempt(
     let (keypair, instructions, _price) = raydium.build_swap_from_parsed_data(trade_info, sell_config).await
         .map_err(|e| anyhow!("Failed to build Raydium swap: {}", e))?;
 
-    let recent_blockhash = crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await
+    let recent_blockhash = crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await
         .ok_or_else(|| anyhow!("Failed to get recent blockhash"))?;
 
-    let signatures = crate::core::tx::new_signed_and_send_zeroslot(
+    let signatures = crate::block_engine::tx::new_signed_and_send_zeroslot(
         app_state.zeroslot_rpc_client.clone(),
         recent_blockhash,
         &keypair,
@@ -305,10 +305,10 @@ async fn execute_pumpswap_sell_attempt(
     let (keypair, instructions, _price) = pump_swap.build_swap_from_parsed_data(trade_info, sell_config).await
         .map_err(|e| anyhow!("Failed to build PumpSwap swap: {}", e))?;
 
-    let recent_blockhash = crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await
+    let recent_blockhash = crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await
         .ok_or_else(|| anyhow!("Failed to get recent blockhash"))?;
 
-    let signatures = crate::core::tx::new_signed_and_send_with_landing_mode(
+    let signatures = crate::block_engine::tx::new_signed_and_send_with_landing_mode(
         crate::common::config::TransactionLandingMode::Normal,
         &app_state,
         recent_blockhash,

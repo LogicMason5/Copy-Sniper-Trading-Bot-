@@ -22,8 +22,8 @@ use std::num::NonZeroUsize;
 
 use crate::{
     common::{config::SwapConfig, logger::Logger, cache::WALLET_TOKEN_ACCOUNTS},
-    core::token,
-    engine::{monitor::BondingCurveInfo, swap::{SwapDirection, SwapInType}},
+    block_engine::token,
+    processor::{monitor::BondingCurveInfo, swap::{SwapDirection, SwapInType}},
 };
 
 // Constants for cache
@@ -169,7 +169,7 @@ impl Pump {
     // Updated build_swap_from_parsed_data method - now only uses TradeInfoFromToken data
     pub async fn build_swap_from_parsed_data(
         &self,
-        trade_info: &crate::engine::transaction_parser::TradeInfoFromToken,
+        trade_info: &crate::processor::transaction_parser::TradeInfoFromToken,
         swap_config: SwapConfig,
     ) -> Result<(Arc<Keypair>, Vec<Instruction>, f64)> {
         let started_time = Instant::now();
@@ -177,7 +177,7 @@ impl Pump {
         _logger.log(format!("Building PumpFun swap from parsed transaction data"));
         
         // Basic validation - ensure we have a PumpFun transaction
-        if trade_info.dex_type != crate::engine::transaction_parser::DexType::PumpFun {
+        if trade_info.dex_type != crate::processor::transaction_parser::DexType::PumpFun {
             println!("Invalid transaction type, expected PumpFun ::{:?}", trade_info.dex_type);
             // return Err(anyhow!("Invalid transaction type, expected PumpFun"));
         }

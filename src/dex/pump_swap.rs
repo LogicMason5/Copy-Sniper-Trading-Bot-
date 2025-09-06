@@ -12,7 +12,7 @@ use anchor_client::solana_sdk::{
     system_program,
     signer::Signer,
 };
-use crate::engine::transaction_parser::DexType;
+use crate::processor::transaction_parser::DexType;
 use spl_associated_token_account::{
     get_associated_token_address,
     instruction::create_associated_token_account_idempotent
@@ -24,8 +24,8 @@ use std::num::NonZeroUsize;
 
 use crate::{
     common::{config::SwapConfig, logger::Logger, cache::WALLET_TOKEN_ACCOUNTS},
-    core::token,
-    engine::swap::{SwapDirection, SwapInType},
+    block_engine::token,
+    processor::swap::{SwapDirection, SwapInType},
 };
 
 // Import the volume accumulator structures from pump_fun
@@ -142,7 +142,7 @@ impl PumpSwap {
     // Highly optimized build_swap_from_parsed_data - now uses only TradeInfoFromToken
     pub async fn build_swap_from_parsed_data(
         &self,
-        trade_info: &crate::engine::transaction_parser::TradeInfoFromToken,
+        trade_info: &crate::processor::transaction_parser::TradeInfoFromToken,
         swap_config: SwapConfig,
     ) -> Result<(Arc<Keypair>, Vec<Instruction>, f64)> {
         let logger = Logger::new("[PUMPSWAP-FROM-PARSED] => ".blue().to_string());
@@ -226,7 +226,7 @@ impl PumpSwap {
     // Helper methods using only parsed data
     async fn prepare_buy_swap_from_parsed(
         &self,
-        trade_info: &crate::engine::transaction_parser::TradeInfoFromToken,
+        trade_info: &crate::processor::transaction_parser::TradeInfoFromToken,
         owner: Pubkey,
         mint: Pubkey,
         pool_id: Pubkey,
@@ -292,7 +292,7 @@ impl PumpSwap {
     
     async fn prepare_sell_swap_from_parsed(
         &self,
-        trade_info: &crate::engine::transaction_parser::TradeInfoFromToken,
+        trade_info: &crate::processor::transaction_parser::TradeInfoFromToken,
         owner: Pubkey,
         mint: Pubkey,
         pool_id: Pubkey,

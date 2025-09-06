@@ -1,5 +1,5 @@
 use crate::common::config::import_env_var;
-use crate::engine::monitor::PoolInfo;
+use crate::processor::monitor::PoolInfo;
 use solana_sdk::signature::Signer;
 use std::collections::{HashSet, VecDeque};
 use std::str::FromStr;
@@ -19,8 +19,8 @@ use crate::common::{
     logger::Logger,
     cache::WALLET_TOKEN_ACCOUNTS,
 };
-use crate::engine::transaction_parser::{TradeInfoFromToken, DexType};
-use crate::engine::swap::{SwapDirection, SwapProtocol, SwapInType};
+use crate::processor::transaction_parser::{TradeInfoFromToken, DexType};
+use crate::processor::swap::{SwapDirection, SwapProtocol, SwapInType};
 use crate::dex::pump_fun::Pump;
 use crate::dex::pump_swap::PumpSwap;
 
@@ -1807,7 +1807,7 @@ impl SellingEngine {
 
         // Determine protocol - use provided protocol or get from metrics
         let sell_protocol = protocol.unwrap_or_else(|| {
-            if let Some(metrics) = crate::engine::selling_strategy::TOKEN_METRICS.get(token_mint) {
+            if let Some(metrics) = crate::processor::selling_strategy::TOKEN_METRICS.get(token_mint) {
                 metrics.protocol.clone()
             } else {
                 SwapProtocol::PumpFun // Default fallback
@@ -1827,10 +1827,10 @@ impl SellingEngine {
             // Use provided parsed data
             TradeInfoFromToken {
                 dex_type: match sell_protocol {
-                    SwapProtocol::PumpSwap => crate::engine::transaction_parser::DexType::PumpSwap,
-                    SwapProtocol::PumpFun => crate::engine::transaction_parser::DexType::PumpFun,
-                    SwapProtocol::RaydiumLaunchpad => crate::engine::transaction_parser::DexType::RaydiumLaunchpad,
-                    _ => crate::engine::transaction_parser::DexType::Unknown,
+                    SwapProtocol::PumpSwap => crate::processor::transaction_parser::DexType::PumpSwap,
+                    SwapProtocol::PumpFun => crate::processor::transaction_parser::DexType::PumpFun,
+                    SwapProtocol::RaydiumLaunchpad => crate::processor::transaction_parser::DexType::RaydiumLaunchpad,
+                    _ => crate::processor::transaction_parser::DexType::Unknown,
                 },
                 slot: data.slot,
                 signature: if is_whale_emergency { "whale_emergency_sell" } else { "regular_emergency_sell" }.to_string(),
@@ -1885,7 +1885,7 @@ impl SellingEngine {
                 match pump.build_swap_from_parsed_data(&emergency_trade_info, emergency_config).await {
                     Ok((keypair, instructions, price)) => {
                         // Get recent blockhash from the processor
-                        let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+                        let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                             Some(hash) => hash,
                             None => {
                                 self.logger.log("Failed to get recent blockhash".red().to_string());
@@ -1894,7 +1894,7 @@ impl SellingEngine {
                         };
                         self.logger.log(format!("Generated emergency PumpFun sell instruction at price: {}", price));
                         // Execute with zeroslot for copy selling
-                        match crate::core::tx::new_signed_and_send_zeroslot(
+                        match crate::block_engine::tx::new_signed_and_send_zeroslot(
                             self.app_state.zeroslot_rpc_client.clone(),
                             recent_blockhash,
                             &keypair,
@@ -1935,7 +1935,7 @@ impl SellingEngine {
                 match pump_swap.build_swap_from_parsed_data(&emergency_trade_info, emergency_config).await {
                     Ok((keypair, instructions, price)) => {
                         // Get recent blockhash from the processor
-                        let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+                        let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                             Some(hash) => hash,
                             None => {
                                 self.logger.log("Failed to get recent blockhash".red().to_string());
@@ -1944,7 +1944,7 @@ impl SellingEngine {
                         };
                         self.logger.log(format!("Generated emergency PumpSwap sell instruction at price: {}", price));
                         // Execute with zeroslot for copy selling
-                        match crate::core::tx::new_signed_and_send_zeroslot(
+                        match crate::block_engine::tx::new_signed_and_send_zeroslot(
                             self.app_state.zeroslot_rpc_client.clone(),
                             recent_blockhash,
                             &keypair,
@@ -1985,7 +1985,7 @@ impl SellingEngine {
                 match raydium.build_swap_from_parsed_data(&emergency_trade_info, emergency_config).await {
                     Ok((keypair, instructions, price)) => {
                         // Get recent blockhash from the processor
-                        let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+                        let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                             Some(hash) => hash,
                             None => {
                                 self.logger.log("Failed to get recent blockhash".red().to_string());
@@ -1994,7 +1994,7 @@ impl SellingEngine {
                         };
                         self.logger.log(format!("Generated emergency Raydium sell instruction at price: {}", price));
                         // Execute with zeroslot for copy selling
-                        match crate::core::tx::new_signed_and_send_zeroslot(
+                        match crate::block_engine::tx::new_signed_and_send_zeroslot(
                             self.app_state.zeroslot_rpc_client.clone(),
                             recent_blockhash,
                             &keypair,
@@ -2034,7 +2034,7 @@ impl SellingEngine {
                 
                 match pump.build_swap_from_parsed_data(&emergency_trade_info, emergency_config).await {
                     Ok((keypair, instructions, price)) => {
-                        let recent_blockhash = match crate::services::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
+                        let recent_blockhash = match crate::library::blockhash_processor::BlockhashProcessor::get_latest_blockhash().await {
                             Some(hash) => hash,
                             None => {
                                 self.logger.log("Failed to get recent blockhash".red().to_string());
@@ -2042,7 +2042,7 @@ impl SellingEngine {
                             }
                         };
                         self.logger.log(format!("Generated emergency PumpFun sell instruction at price: {}", price));
-                        match crate::core::tx::new_signed_and_send_zeroslot(
+                        match crate::block_engine::tx::new_signed_and_send_zeroslot(
                             self.app_state.zeroslot_rpc_client.clone(),
                             recent_blockhash,
                             &keypair,
@@ -2120,7 +2120,7 @@ impl SellingEngine {
         self.logger.log(format!("🌌 Attempting Jupiter API fallback sell for {} tokens of {}", token_amount, token_mint).cyan().to_string());
         
         // Create Jupiter client
-        let jupiter_client = crate::services::jupiter_api::JupiterClient::new(
+        let jupiter_client = crate::library::jupiter_api::JupiterClient::new(
             self.app_state.rpc_nonblocking_client.clone()
         );
         
