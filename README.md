@@ -22,7 +22,7 @@ High-performance Rust bot that monitors wallets and DEX activity on Solana and a
    - Target wallet monitoring (`processor/sniper_bot.rs`)
    - DEX monitoring (`processor/sniper_bot.rs`), protocol auto-detection or preference
 5. Parse candidate transactions/logs, filter excluded addresses and apply limits.
-6. Execute swaps (PumpFun) or notify (PumpSwap). Apply slippage and priority-fee settings; optionally use ZeroSlot mode.
+6. Execute swaps. Apply slippage and priority-fee settings; optionally use ZeroSlot mode.
 7. Manage positions with the selling strategy (TP/SL/dynamic trailing). Liquidation paths use Jupiter.
 8. Maintain a per-token 20-slot time-series (price, buy/sell volume) to detect post-drop bottoms, enabling sniper entries and informed copy trades.
 
