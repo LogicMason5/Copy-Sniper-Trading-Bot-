@@ -20,6 +20,7 @@ use crate::common::{
     cache::WALLET_TOKEN_ACCOUNTS,
 };
 use crate::processor::transaction_parser::{TradeInfoFromToken, DexType};
+use crate::common::timeseries as ts;
 use crate::processor::swap::{SwapDirection, SwapProtocol, SwapInType};
 use crate::dex::pump_fun::Pump;
 use crate::dex::pump_swap::PumpSwap;
@@ -1083,6 +1084,10 @@ impl SellingEngine {
         if entry.price_history.len() > 20 {  // Keep last 20 prices
             entry.price_history.pop_front();
         }
+
+        // Time-series cache: 20-slot rolling price and buy/sell volume
+        let sol_volume = trade_info.sol_change.abs();
+        ts::update_for_mint(token_mint, trade_info.slot, price, is_buy, sol_volume);
         
         // Log current metrics
         let pnl = if entry.entry_price > 0.0 {
@@ -1095,6 +1100,15 @@ impl SellingEngine {
             "Token metrics for {}: Price: {}, Entry: {}, Highest: {}, Lowest: {}, PNL: {:.2}%, Balance: {}, Liquidity: {:.2} SOL",
             token_mint, price, entry.entry_price, entry.highest_price, entry.lowest_price, pnl, actual_token_balance, current_liquidity
         ));
+
+        // Detect bottom after drop from time-series to inform sniper/copy logic
+        let bottom = ts::analyze_bottom(token_mint, 10.0, 30.0, 3);
+        if bottom.is_bottom {
+            logger.log(format!(
+                "📉 Potential bottom detected for {}: lowest {:.8}, drop {:.1}% over last 20 slots",
+                token_mint, bottom.lowest_price, bottom.drop_pct
+            ).yellow().to_string());
+        }
         
         Ok(())
     }
