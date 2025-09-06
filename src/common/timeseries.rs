@@ -68,12 +68,20 @@ impl TokenTimeseries {
 
         // Check stabilization on last `stabilize_slots` samples
         let n = self.samples.len();
-        let recent = &self.samples[n - stabilize_slots..n];
-        let prev = &self.samples[n - stabilize_slots * 2..n - stabilize_slots];
+        let recent: Vec<&SlotSample> = self.samples
+            .iter()
+            .skip(n - stabilize_slots)
+            .take(stabilize_slots)
+            .collect();
+        let prev: Vec<&SlotSample> = self.samples
+            .iter()
+            .skip(n - stabilize_slots * 2)
+            .take(stabilize_slots)
+            .collect();
 
         // Non-decreasing price condition (allow slight noise)
         let mut non_decreasing = true;
-        for w in recent.windows(2) {
+        for w in recent.as_slice().windows(2) {
             if w[1].price + (w[1].price * 0.001) < w[0].price { // 0.1% tolerance
                 non_decreasing = false;
                 break;
