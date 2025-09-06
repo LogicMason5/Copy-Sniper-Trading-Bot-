@@ -26,6 +26,7 @@ Note: Current PumpSwap mode is notification-only by default (no trade execution)
 5. Parse candidate transactions/logs, filter excluded addresses and apply limits.
 6. Execute swaps (PumpFun) or notify (PumpSwap). Apply slippage and priority-fee settings; optionally use ZeroSlot mode.
 7. Manage positions with the selling strategy (TP/SL/dynamic trailing). Liquidation paths use Jupiter.
+8. Maintain a per-token 20-slot time-series (price, buy/sell volume) to detect post-drop bottoms, enabling sniper entries and informed copy trades.
 
 ```mermaid
 flowchart TD
@@ -46,6 +47,10 @@ flowchart TD
   M --> O[Update selling / copy-sell]
   O --> P[Dynamic trailing / TP / SL]
   P --> Q[Jupiter sell path]
+  K --> R[Update 20-slot time series]
+  R --> S{Bottom detected?}
+  S --> |Yes| M
+  S --> |No| H
   N --> Q
 ```
 
@@ -56,6 +61,7 @@ flowchart TD
 ```
 src/
   common/                # config, constants, logger, caches
+  common/timeseries.rs   # 20-slot price & volume time-series, bottom detection
   library/               # blockhash processor, jupiter client, rpc, zeroslot
   processor/             # monitoring, swap/execution, selling, risk mgmt, parsing
   dex/                   # protocol adapters: pump_fun.rs, pump_swap.rs, raydium_launchpad.rs
@@ -136,6 +142,7 @@ Copy from `src/env.example` and adjust. Key settings (not exhaustive):
   - `DYNAMIC_TRAILING_STOP_THRESHOLDS`: e.g. `20:5,50:10,100:30,200:100,500:100,1000:100`
   - `DYNAMIC_RETRACEMENT_PERCENTAGE`, `RETRACEMENT_PNL_THRESHOLD`, `RETRACEMENT_THRESHOLD`
   - `MIN_LIQUIDITY`
+  - Time-series bottom detection (optional, future envs): `BOTTOM_MIN_DROP_PCT`, `BOTTOM_SELL_DECLINE_PCT`, `BOTTOM_STABILIZE_SLOTS`
 
 - Sniper focus
   - `FOCUS_DROP_THRESHOLD_PCT`: fraction drop to mark token as dropped
